@@ -5,15 +5,15 @@ from Pyshock import PishockAPI
 import random
 import os
 import sys
-from config import username, api_key, share_code, app_name, test_mode, snooze_duration
+from config import username, api_key, shocker_ids, app_name, test_mode, snooze_duration
 
-pishock = PishockAPI(api_key, username, share_code, app_name)
+pishock = PishockAPI(api_key, username, shocker_ids, app_name)
 alarm_triggered = False
 alarm_file = "alarm_time.txt"
 
 def periodic_vibration():
     while not alarm_triggered:
-        pishock.vibrate(0, 0)
+        pishock.vibrate(0, 1)
         sleep(120)
 
 def save_alarm_settings(alarm_time_str, intensity, duration):
@@ -29,19 +29,23 @@ def load_alarm_settings():
     return None, None, None
 
 def get_user_input():
-    if test_mode:
-        intensity = int(input("Enter action intensity (1-100): "))
-        shock_duration = int(input("Enter action duration (in seconds, 1-15): "))
-        return None, intensity, shock_duration
-    else:
+    if not test_mode:
         alarm_time_str = input("Enter alarm time (24-hour HH:MM format): ")
-        intensity = input("Enter action intensity (1-100 or 'r' for random, '0' for beep): ")
-        if intensity == 'r':
-            intensity = random.randint(1, 100)
-        else:
-            intensity = int(intensity)
-        shock_duration = int(input("Enter action duration (in seconds, 1-15): "))
-        return alarm_time_str, intensity, shock_duration
+    else:
+        alarm_time_str = None
+
+    intensity = input("Enter action intensity (1-100 or 'r' for random, '0' for beep): ")
+    if intensity == 'r':
+        intensity = random.randint(1, 100)
+    else:
+        intensity = int(intensity)
+    shock_duration = input("Enter action duration (decibels allowed) (in seconds, 1-15, or 'r' for random): ")
+    if shock_duration == "r":
+        shock_duration = random.uniform(0, 15)
+    else:
+        shock_duration = float(intensity)
+
+    return alarm_time_str, intensity, shock_duration
 
 def calculate_time_until_alarm(alarm_time_str):
     now = datetime.now()
@@ -108,7 +112,7 @@ def execute_shock():
         alarm_time_str, intensity, duration = get_user_input()
 
     print(f"Intensity set to {intensity}")
-    print(f"Duration set to {duration}")
+    print(f"Duration set to {round(duration, 2)}")
 
     action = input("Would you like to Shock, Vibrate, or Beep? (s for shock, v for vibrate, b for beep): ").strip().lower()
 
